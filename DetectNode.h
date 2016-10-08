@@ -3,7 +3,7 @@
 class DetectNode
 {
   public:
-      bool isOnNode(int s[]){
+      bool isOnNode(byte s[]){
     
       if(s[0]==0 && s[1]==0 && s[2]==0 && s[3]==0 && s[4]==1 && s[5]==1) //this is left 'T' turn
       {

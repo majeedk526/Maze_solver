@@ -1,22 +1,21 @@
+//TO do: update weight in sensors.h
+
 #include <EnableInterrupt.h>
 
 #include "DCMotors.h" 
 #include "Sensor.h"
-#include "maze_test.h"
+#include "DetectNode.h"
+#include "Path.h"
 
-#define START 's'
-#define STOP 't'
-#define isrPinRight 3
-#define isrPinLeft 5
+#define isrPinRight 8
+#define isrPinLeft 3
 
-
-bool debug = false;
-bool startDrive = false;
 volatile bool isrInProcess  = false;
 
-maze_
 DCMotors<10,18,19,11,14,15> motors; //enL, L1, L2, enR, R1, R2
-Sensor<2,3,4,5,6> sensors;
+Sensor<2,3,4,5,6,7,8, 9> sensors;
+DetectNode dnode;
+Path path;
 
 float Kp=7.5, Ki=5 ,Kd=0.08;
 
@@ -26,6 +25,14 @@ volatile float I=0;
 float error=0;
 float previous_error=0, previous_I=0;
 char c;
+byte nVisited = 0;
+byte S = 100;
+byte L = 101;
+byte R = 102;
+byte ca;
+
+byte c1 = 2; // variable check points
+byte c2 = 3; // variable check points
 
 void setup() {
   
@@ -34,30 +41,14 @@ void setup() {
   Serial.begin(9600);
 
   debug = false;
-
-  delay(300);
   
   invalidate();
+
+  path.getPath(c1, c2);
   
 }
 
 void loop() {
-
-
-     /** if(Serial.available()){
-        c = Serial.read();
-     
-        if(c == START){ 
-          invalidate();
-          startDrive = true; }
-        else {
-          
-          startDrive = false;}
-        
-        if(debug){ btDebug(); }
-      }**/
-
-      //if(startDrive){
 
       if(isrInProcess){
               //Serial.println("looping");
@@ -66,31 +57,20 @@ void loop() {
      
       sensors.updateError();
       calculate_pid();
+        
+            if(dnode.isOnNode(sensors.vps)){
+                ca = path.p[nVisited];
+                nVisited++;
 
-      if(sensors.isTurnRequired){
-
-          // Serial.println(error);
-           if(error < 0 ){ //turn right
-                   //Serial.println("isr right begins");
-                  enableInterrupt(isrPinLeft, isrRightTurnComplete, FALLING );
-            
-            } else if (error > 0){
-                 // Serial.println("isr left begins");
-                  enableInterrupt(isrPinRight, isrLeftTurnComplete, FALLING );
-                
+                if(ca == S){motors.drive((int)PID_value);}
+                else if (ca == R) {
+                    enableInterrupt(isrPinLeft, isrRightTurnComplete, RISING );
+                  }
+                else if (ca == L){
+                    enableInterrupt(isrPinRight, isrLeftTurnComplete, RISING );
+                  }
               }
-          isrInProcess = true;
-          motors.turn(error);
           
-        } else {
-            motors.drive((int)PID_value);
-          }
-
-     /** }
-      else if(!startDrive){
-      invalidate();
-      motors.stopMoving();
-    }**/
     delay(1);
 }
 
@@ -143,7 +123,7 @@ void isrLeftTurnComplete(){
     invalidate();
     isrInProcess = false;
     
-    }
+  }
 
 void btDebug()
 {

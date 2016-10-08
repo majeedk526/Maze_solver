@@ -50,12 +50,10 @@ class DCMotors{
     digitalWrite(inpR2,LOW);
   }
 
-  void turn(int cor){
+  void turnLeft(){
 
     stopMoving();
     delay(1);
-    
-    if(cor<0){
 
       analogWrite(enL,turnSpeed);
       analogWrite(enR,55);
@@ -63,9 +61,13 @@ class DCMotors{
       digitalWrite(inpL2,LOW);
       digitalWrite(inpR1,HIGH); //change
       digitalWrite(inpR2,LOW);
+  }
+
+  void turnRight(){
+
+    stopMoving();
+    delay(1);
       
-      }
-     else if(cor>0){
       analogWrite(enL,55);
       analogWrite(enR,turnSpeed);
       digitalWrite(inpL1,LOW); // change
@@ -73,6 +75,5 @@ class DCMotors{
       digitalWrite(inpR1,LOW);
       digitalWrite(inpR2,HIGH);
      }
-    }
 };
 
