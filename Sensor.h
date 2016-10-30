@@ -1,14 +1,17 @@
 #include <Arduino.h>
+#include "NodeTypes.h"
 
-template<byte ps0, byte ps1, byte ps2, byte ps3, byte ps4, byte ps5, byte ps6, byte ps7 >
+template<byte ps0, byte ps1, byte ps2, byte ps3, byte ps4, byte ps5, byte ps6, byte ps7, byte ps8 >
 
 class Sensor{
 
 public:
 
-byte vps[8] = {0,0,0,0,0,0,0,0};
+byte vps[9] = {0,0,0,0,0,0,0,0,0};
 volatile float error = 0;
 volatile bool isTurnRequired = false;
+byte nodeType = -1;
+bool isStartNodePassed = false;
 
 void configure(){
 
@@ -20,6 +23,7 @@ void configure(){
   pinMode(ps5,INPUT);
   pinMode(ps6,INPUT);
   pinMode(ps7,INPUT);
+  pinMode(ps8,INPUT);
   
 }
 
@@ -33,6 +37,7 @@ void updateError(){
   vps[5] = digitalRead(ps5);
   vps[6] = digitalRead(ps6);
   vps[7] = digitalRead(ps7);
+  vps[8] = digitalRead(ps8);
   
 
   //printArrayStatus();
@@ -60,6 +65,70 @@ void updateError(){
   if(vps[7]) {error=-1;}
 }
 
+byte getNodeType(){
+
+// detect cross
+ if(!vps[0] && !vps[7] && !vps[8]){
+  delay(50);
+  updateError();
+  if(vps[0] && vps[7] && !vps[8]){
+    // cross detected
+    nodeType = NODE_TYPE_LEFT;
+  } else if(!vps[0] && !vps[7] && !vps[8]){
+    // goal node detected
+    nodeType = NODE_TYPE_GOAL;
+  }
+ }
+ 
+ // detect T type 
+ else if (!vps[0] && !vps[7] && vps[8]){nodeType = NODE_TYPE_LEFT;}
+
+ // detect right and straight
+ else if (vps[0] && !vps[7] && !vps[8]){nodeType = NODE_TYPE_STRAIGHT;}
+
+ // detect left and straight
+ else if (!vps[0] && vps[7] && !vps[8]){nodeType = NODE_TYPE_LEFT;}
+
+  // detect u turn
+  else if (vps[0] && !vps[7] && vps[8]){nodeType = NODE_TYPE_U_TURN;}
+
+ // detect start
+ // add while writing route to EPROM
+
+  else {
+    nodeType = -1;
+  }
+  return nodeType;
+
+
+
+  /**
+ // detect cross
+ if(vps[0] && vps[7] && vps[8]){ nodeType = NODE_TYPE_CROSS;}
+ 
+ // detect T type 
+ else if (vps[0] && vps[7] && !vps[8]){nodeType = NODE_TYPE_T;}
+
+ // detect right and straight
+ else if (!vps[0] && vps[7] && vps[8]){nodeType = NODE_TYPE_T;}
+
+ // detect left and straight
+ else if (vps[0] && !vps[7] && vps[8]){nodeType = NODE_TYPE_T;}
+
+ // detect start
+ else if (!vps[0] && !vps[7] && !vps[8] && !isStartNodePassed){
+  isStartNodePassed = true;
+  nodeType = NODE_TYPE_START;}
+
+ // detect end
+  else if (!vps[0] && !vps[7] && !vps[8] && isStartNodePassed){
+    nodeType = NODE_TYPE_GOAL;
+  } else {
+    nodeType = -1;
+  }
+  return nodeType;**/
+}
+
 void printArrayStatus(){
 
   Serial.print(vps[0]);
@@ -73,5 +142,4 @@ void printArrayStatus(){
   Serial.print(vps[4]);
   
   }
-
 };
